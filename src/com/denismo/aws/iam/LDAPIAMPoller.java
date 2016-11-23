@@ -457,7 +457,7 @@ public class LDAPIAMPoller {
                             LOG.warn("Unable to retrieve matching group entry for group " + primaryGroup.getGroupName() + " user " + user.getUserName());
                             continue;
                         }
-                        addUser(user, getUserAccessKey(client, user), groupEntry);
+                        addUser(user, getUserAccessKey(client, user), groupEntry, groups);
                         updateGroups(groups, user);
                         allUsers.add(user.getUserName());
                         LOG.info("Added user " + user.getUserName());
@@ -521,7 +521,7 @@ public class LDAPIAMPoller {
         return null;
     }
 
-    private void addUser(User user, String accessKey, Entry group) throws LdapException {
+    private void addUser(User user, String accessKey, Entry group, Collection<Group> allGroups) throws LdapException {
         if (accessKey == null) {
             if (AWSIAMAuthenticator.getConfig().isSecretKeyLogin()) {
                 LOG.info("User " + user.getUserName() + " has no active access keys");
@@ -562,6 +562,11 @@ public class LDAPIAMPoller {
         ent.put("loginshell", "/bin/bash");
         ent.put("homedirectory", "/home/" + user.getUserName());
         ent.put("accountNumber", getAccountNumber(user.getArn()));
+        Set<String> groupNames = new HashSet<String>();
+        for(Group grp : allGroups) {
+            groupNames.add(grp.getGroupName());
+        }
+        ent.put("memberOf", groupNames.toArray(new String[groupNames.size()]));
         add(ent);
     }
 
